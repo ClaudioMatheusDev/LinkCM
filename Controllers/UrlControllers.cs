@@ -51,13 +51,21 @@ namespace LinkCM.Controllers
             }
 
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
+
+            if (request.DataExpira.HasValue && request.DataExpira.Value <= DateTime.UtcNow)
+            {
+                return BadRequest("A data de expiração deve ser uma data futura.");
+            }
+
+            DateTime dataExpiraFinal = request.DataExpira ?? DateTime.UtcNow.AddYears(1);
+
             var urlCurta = new URLCurta
             {
                 UrlOriginal = request.Url,
                 ShortCode = shortCode!,
                 UrlOtimizada = $"{baseUrl}/{shortCode}",
-                DataCriacao = DateTime.Now,
-                DataExpira = request.DataExpira ?? DateTime.Now.AddYears(1),
+                DataCriacao = DateTime.UtcNow,
+                DataExpira = dataExpiraFinal,
                 QuantidadeCliques = 0,
                 Ativo = true
             };
@@ -77,6 +85,24 @@ namespace LinkCM.Controllers
             };
 
             return CreatedAtAction(nameof(Create), new { id = urlCurta.Id }, response);
+        }
+
+        [HttpGet("/{shortCode}")]
+        public async Task<ActionResult<RespostaURLCurta>> RedirectToOriginal(string shortCode)
+        {
+            var urlCurta = await _context.ShortUrls.FirstOrDefaultAsync(url => url.ShortCode == shortCode);
+
+            if (urlCurta is null || !urlCurta.Ativo || urlCurta.DataExpira <= DateTime.Now)
+            {
+                return NotFound("URL curta não encontrada ou expirada.");
+            }
+
+            urlCurta.QuantidadeCliques++;
+            urlCurta.UltimoAcesso = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            return Redirect(urlCurta.UrlOriginal);
         }
     }
 }
