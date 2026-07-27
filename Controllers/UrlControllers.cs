@@ -29,10 +29,15 @@ namespace LinkCM.Controllers
                 return BadRequest("Informe uma URL valida com http ou https.");
             }
 
-            var shortCode = request.CustomCode;
+            var shortCode = request.CustomCode?.Trim();
 
             if (!string.IsNullOrWhiteSpace(shortCode))
             {
+                if (!GeradorCodigosCurtos.CodigoPersonalizadoValido(shortCode))
+                {
+                    return BadRequest("O codigo curto personalizado deve ter exatamente 6 caracteres alfanumericos.");
+                }
+
                 var customCodeExists = await _context.ShortUrls
                     .AnyAsync(url => url.ShortCode == shortCode);
 
@@ -92,13 +97,13 @@ namespace LinkCM.Controllers
         {
             var urlCurta = await _context.ShortUrls.FirstOrDefaultAsync(url => url.ShortCode == shortCode);
 
-            if (urlCurta is null || !urlCurta.Ativo || urlCurta.DataExpira <= DateTime.Now)
+            if (urlCurta is null || !urlCurta.Ativo || urlCurta.DataExpira <= DateTime.UtcNow)
             {
                 return NotFound("URL curta não encontrada ou expirada.");
             }
 
             urlCurta.QuantidadeCliques++;
-            urlCurta.UltimoAcesso = DateTime.Now;
+            urlCurta.UltimoAcesso = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 
