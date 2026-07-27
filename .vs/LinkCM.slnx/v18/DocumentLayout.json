@@ -1,0 +1,139 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\Projetos\\LinkCm\\LinkCM\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{5152F249-34FC-E311-2D70-C25130E14604}|LinkCM.csproj|d:\\projetos\\linkcm\\linkcm\\controllers\\urlcontrollers.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5152F249-34FC-E311-2D70-C25130E14604}|LinkCM.csproj|solutionrelative:controllers\\urlcontrollers.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{5152F249-34FC-E311-2D70-C25130E14604}|LinkCM.csproj|d:\\projetos\\linkcm\\linkcm\\data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5152F249-34FC-E311-2D70-C25130E14604}|LinkCM.csproj|solutionrelative:data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{5152F249-34FC-E311-2D70-C25130E14604}|LinkCM.csproj|d:\\projetos\\linkcm\\linkcm\\services\\geradorcodigoscurtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5152F249-34FC-E311-2D70-C25130E14604}|LinkCM.csproj|solutionrelative:services\\geradorcodigoscurtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{5152F249-34FC-E311-2D70-C25130E14604}|LinkCM.csproj|d:\\projetos\\linkcm\\linkcm\\dtos\\respostaurlcurta.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5152F249-34FC-E311-2D70-C25130E14604}|LinkCM.csproj|solutionrelative:dtos\\respostaurlcurta.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{5152F249-34FC-E311-2D70-C25130E14604}|LinkCM.csproj|d:\\projetos\\linkcm\\linkcm\\dtos\\urlcurtarequisicao.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5152F249-34FC-E311-2D70-C25130E14604}|LinkCM.csproj|solutionrelative:dtos\\urlcurtarequisicao.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{5152F249-34FC-E311-2D70-C25130E14604}|LinkCM.csproj|d:\\projetos\\linkcm\\linkcm\\models\\urlcurta.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5152F249-34FC-E311-2D70-C25130E14604}|LinkCM.csproj|solutionrelative:models\\urlcurta.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{5152F249-34FC-E311-2D70-C25130E14604}|LinkCM.csproj|d:\\projetos\\linkcm\\linkcm\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5152F249-34FC-E311-2D70-C25130E14604}|LinkCM.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "UrlControllers.cs",
+              "DocumentMoniker": "D:\\Projetos\\LinkCm\\LinkCM\\Controllers\\UrlControllers.cs",
+              "RelativeDocumentMoniker": "Controllers\\UrlControllers.cs",
+              "ToolTip": "D:\\Projetos\\LinkCm\\LinkCM\\Controllers\\UrlControllers.cs",
+              "RelativeToolTip": "Controllers\\UrlControllers.cs",
+              "ViewState": "AgIAACoAAAAAAAAAAAAowDsAAABMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-22T00:37:28.794Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "RespostaURLCurta.cs",
+              "DocumentMoniker": "D:\\Projetos\\LinkCm\\LinkCM\\DTOs\\RespostaURLCurta.cs",
+              "RelativeDocumentMoniker": "DTOs\\RespostaURLCurta.cs",
+              "ToolTip": "D:\\Projetos\\LinkCm\\LinkCM\\DTOs\\RespostaURLCurta.cs",
+              "RelativeToolTip": "DTOs\\RespostaURLCurta.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-22T00:23:46.585Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "URLCurtaRequisicao.cs",
+              "DocumentMoniker": "D:\\Projetos\\LinkCm\\LinkCM\\DTOs\\URLCurtaRequisicao.cs",
+              "RelativeDocumentMoniker": "DTOs\\URLCurtaRequisicao.cs",
+              "ToolTip": "D:\\Projetos\\LinkCm\\LinkCM\\DTOs\\URLCurtaRequisicao.cs",
+              "RelativeToolTip": "DTOs\\URLCurtaRequisicao.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAWAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-22T00:21:53.952Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "GeradorCodigosCurtos.cs",
+              "DocumentMoniker": "D:\\Projetos\\LinkCm\\LinkCM\\Services\\GeradorCodigosCurtos.cs",
+              "RelativeDocumentMoniker": "Services\\GeradorCodigosCurtos.cs",
+              "ToolTip": "D:\\Projetos\\LinkCm\\LinkCM\\Services\\GeradorCodigosCurtos.cs",
+              "RelativeToolTip": "Services\\GeradorCodigosCurtos.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-21T23:56:12.477Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "AppDbContext.cs",
+              "DocumentMoniker": "D:\\Projetos\\LinkCm\\LinkCM\\Data\\AppDbContext.cs",
+              "RelativeDocumentMoniker": "Data\\AppDbContext.cs",
+              "ToolTip": "D:\\Projetos\\LinkCm\\LinkCM\\Data\\AppDbContext.cs",
+              "RelativeToolTip": "Data\\AppDbContext.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABgAAAAvAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-21T23:37:52.93Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "URLCurta.cs",
+              "DocumentMoniker": "D:\\Projetos\\LinkCm\\LinkCM\\Models\\URLCurta.cs",
+              "RelativeDocumentMoniker": "Models\\URLCurta.cs",
+              "ToolTip": "D:\\Projetos\\LinkCm\\LinkCM\\Models\\URLCurta.cs",
+              "RelativeToolTip": "Models\\URLCurta.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAA9AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-21T23:33:19.234Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "Program.cs",
+              "DocumentMoniker": "D:\\Projetos\\LinkCm\\LinkCM\\Program.cs",
+              "RelativeDocumentMoniker": "Program.cs",
+              "ToolTip": "D:\\Projetos\\LinkCm\\LinkCM\\Program.cs",
+              "RelativeToolTip": "Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAAmAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-21T23:32:35.252Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
