@@ -3,6 +3,7 @@ using LinkCM.DTOs;
 using LinkCM.Models;
 using LinkCM.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace LinkCM.Controllers
@@ -11,73 +12,171 @@ namespace LinkCM.Controllers
     [Route("api/urls")]
     public class UrlControllers : ControllerBase
     {
+        private const int MaximoTentativasCodigoAutomatico = 5;
+
         private readonly AppDbContext _context;
         private readonly GeradorCodigosCurtos _codeGenerator;
+        private readonly ILogger<UrlControllers> _logger;
 
-        public UrlControllers(AppDbContext context, GeradorCodigosCurtos codeGenerator)
+        public UrlControllers(
+            AppDbContext context,
+            GeradorCodigosCurtos codeGenerator,
+            ILogger<UrlControllers> logger)
         {
             _context = context;
             _codeGenerator = codeGenerator;
+            _logger = logger;
         }
 
         [HttpPost]
-        public async Task<ActionResult<RespostaURLCurta>> Create(URLCurtaRequisicao request)
+        public async Task<ActionResult<RespostaURLCurta>> Create(
+            URLCurtaRequisicao request,
+            CancellationToken cancellationToken)
         {
-            if (!Uri.TryCreate(request.Url, UriKind.Absolute, out var uri) ||
-                (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+            var DataHoraAgora = DateTime.UtcNow.AddHours(-3);
+
+            if (!UrlValida(request.Url))
             {
-                return BadRequest("Informe uma URL valida com http ou https.");
+                return BadRequest(
+                    "Informe uma URL válida começando com http ou https.");
             }
 
-            var shortCode = request.CustomCode?.Trim();
-
-            if (!string.IsNullOrWhiteSpace(shortCode))
+            if (request.DataExpira.HasValue &&
+                request.DataExpira.Value <= DataHoraAgora)
             {
-                if (!GeradorCodigosCurtos.CodigoPersonalizadoValido(shortCode))
-                {
-                    return BadRequest("O codigo curto personalizado deve ter exatamente 6 caracteres alfanumericos.");
-                }
-
-                var customCodeExists = await _context.ShortUrls
-                    .AnyAsync(url => url.ShortCode == shortCode);
-
-                if (customCodeExists)
-                {
-                    return Conflict("Esse codigo curto ja esta em uso.");
-                }
-            }
-            else
-            {
-                do
-                {
-                    shortCode = _codeGenerator.GerarCodigoCurto();
-                }
-                while (await _context.ShortUrls.AnyAsync(url => url.ShortCode == shortCode));
+                return BadRequest(
+                    "A data de expiração deve ser uma data futura.");
             }
 
+            var customCode = request.CustomCode?.Trim();
+
+            if (!string.IsNullOrWhiteSpace(customCode))
+            {
+                return await CriarComCodigoPersonalizado(
+                    request,
+                    customCode,
+                    cancellationToken);
+            }
+
+            return await CriarComCodigoAutomatico(
+                request,
+                cancellationToken);
+        }
+
+        private async Task<ActionResult<RespostaURLCurta>>
+            CriarComCodigoPersonalizado(
+                URLCurtaRequisicao request,
+                string customCode,
+                CancellationToken cancellationToken)
+        {
+            if (!GeradorCodigosCurtos.CodigoPersonalizadoValido(customCode))
+            {
+                return BadRequest(
+                    "O código curto personalizado deve ter exatamente " +
+                    "6 caracteres alfanuméricos.");
+            }
+
+            // Pré-checagem para retornar 409 mais cedo.
+            // Não é a garantia definitiva contra concorrência.
+            var customCodeExists = await _context.ShortUrls
+                .AnyAsync(
+                    url => url.ShortCode == customCode,
+                    cancellationToken);
+
+            if (customCodeExists)
+            {
+                return Conflict("Esse código curto já está em uso.");
+            }
+
+            var urlCurta = CriarEntidade(request, customCode);
+
+            _context.ShortUrls.Add(urlCurta);
+
+            try
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+
+                return CriarRespostaCreated(urlCurta);
+            }
+            catch (DbUpdateException exception)
+                when (EhViolacaoDoIndiceShortCode(exception))
+            {
+                _context.Entry(urlCurta).State = EntityState.Detached;
+
+                return Conflict("Esse código curto já está em uso.");
+            }
+        }
+
+        private async Task<ActionResult<RespostaURLCurta>>
+            CriarComCodigoAutomatico(
+                URLCurtaRequisicao request,
+                CancellationToken cancellationToken)
+        {
+            for (var tentativa = 1;
+                 tentativa <= MaximoTentativasCodigoAutomatico;
+                 tentativa++)
+            {
+                var shortCode = _codeGenerator.GerarCodigoCurto();
+
+                var urlCurta = CriarEntidade(request, shortCode);
+
+                _context.ShortUrls.Add(urlCurta);
+
+                try
+                {
+                    await _context.SaveChangesAsync(cancellationToken);
+
+                    return CriarRespostaCreated(urlCurta);
+                }
+                catch (DbUpdateException exception)
+                    when (EhViolacaoDoIndiceShortCode(exception))
+                {
+                    _context.Entry(urlCurta).State = EntityState.Detached;
+
+                    _logger.LogWarning(
+                        "Colisão ao gerar ShortCode {ShortCode}. " +
+                        "Tentativa {Tentativa} de {MaximoTentativas}.",
+                        shortCode,
+                        tentativa,
+                        MaximoTentativasCodigoAutomatico);
+                }
+            }
+
+            _logger.LogError(
+                "Não foi possível gerar um ShortCode único após " +
+                "{MaximoTentativas} tentativas.",
+                MaximoTentativasCodigoAutomatico);
+
+            return StatusCode(
+                StatusCodes.Status503ServiceUnavailable,
+                "Não foi possível gerar uma URL curta no momento. " +
+                "Tente novamente.");
+        }
+
+        private URLCurta CriarEntidade(
+            URLCurtaRequisicao request,
+            string shortCode)
+        {
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var DataHoraAgora = DateTime.UtcNow.AddHours(-3);
 
-            if (request.DataExpira.HasValue && request.DataExpira.Value <= DateTime.UtcNow)
-            {
-                return BadRequest("A data de expiração deve ser uma data futura.");
-            }
+            var dataExpiraFinal =
+                request.DataExpira ?? DataHoraAgora.AddYears(1);
 
-            DateTime dataExpiraFinal = request.DataExpira ?? DateTime.UtcNow.AddYears(1);
-
-            var urlCurta = new URLCurta
+            return new URLCurta
             {
                 UrlOriginal = request.Url,
-                ShortCode = shortCode!,
+                ShortCode = shortCode,
                 UrlOtimizada = $"{baseUrl}/{shortCode}",
-                DataCriacao = DateTime.UtcNow,
+                DataCriacao = DataHoraAgora,
                 DataExpira = dataExpiraFinal,
                 QuantidadeCliques = 0,
                 Ativo = true
             };
-
-            _context.ShortUrls.Add(urlCurta);
-            await _context.SaveChangesAsync();
-
+        }
+        private ActionResult<RespostaURLCurta> CriarRespostaCreated(
+            URLCurta urlCurta)
+        {
             var response = new RespostaURLCurta
             {
                 Id = urlCurta.Id,
@@ -89,23 +188,67 @@ namespace LinkCM.Controllers
                 ContasAcessadas = urlCurta.QuantidadeCliques
             };
 
-            return CreatedAtAction(nameof(Create), new { id = urlCurta.Id }, response);
+            return Created(urlCurta.UrlOtimizada, response);
+        }
+
+        private static bool UrlValida(string url)
+        {
+            return Uri.TryCreate(
+                       url,
+                       UriKind.Absolute,
+                       out var uri) &&
+                   (uri.Scheme == Uri.UriSchemeHttp ||
+                    uri.Scheme == Uri.UriSchemeHttps);
+        }
+
+        private static bool EhViolacaoDoIndiceShortCode(
+            DbUpdateException exception)
+        {
+            var sqlException =
+                exception.InnerException as SqlException ??
+                exception.GetBaseException() as SqlException;
+
+            if (sqlException is null)
+            {
+                return false;
+            }
+
+            var ehDuplicidade =
+                sqlException.Number is 2601 or 2627;
+
+            if (!ehDuplicidade)
+            {
+                return false;
+            }
+
+            return sqlException.Message.Contains(
+                "IX_ShortUrls_ShortCode",
+                StringComparison.OrdinalIgnoreCase);
         }
 
         [HttpGet("/{shortCode}")]
-        public async Task<ActionResult<RespostaURLCurta>> RedirectToOriginal(string shortCode)
-        {
-            var urlCurta = await _context.ShortUrls.FirstOrDefaultAsync(url => url.ShortCode == shortCode);
+        public async Task<ActionResult> RedirectToOriginal(
+            string shortCode,
+            CancellationToken cancellationToken)
+        {   
+            var DataHoraAgora = DateTime.UtcNow.AddHours(-3);
+            var urlCurta = await _context.ShortUrls
+                .FirstOrDefaultAsync(
+                    url => url.ShortCode == shortCode,
+                    cancellationToken);
 
-            if (urlCurta is null || !urlCurta.Ativo || urlCurta.DataExpira <= DateTime.UtcNow)
+            if (urlCurta is null ||
+                !urlCurta.Ativo ||
+                urlCurta.DataExpira <= DataHoraAgora)
             {
-                return NotFound("URL curta não encontrada ou expirada.");
+                return NotFound(
+                    "URL curta não encontrada ou expirada.");
             }
 
             urlCurta.QuantidadeCliques++;
-            urlCurta.UltimoAcesso = DateTime.UtcNow;
+            urlCurta.UltimoAcesso = DataHoraAgora;
 
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
             return Redirect(urlCurta.UrlOriginal);
         }
