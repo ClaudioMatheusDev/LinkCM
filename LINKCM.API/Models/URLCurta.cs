@@ -5,7 +5,7 @@
         public int Id { get; set; }
         public string UrlOriginal { get; set; } = string.Empty;
         public string UrlOtimizada { get; set; } = string.Empty;
-        public DateTime DataCriacao { get; set; } = DateTime.Now;
+        public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
         public DateTime DataExpira { get; set; }
         public int QuantidadeCliques { get; set; } = 0;
         public DateTime UltimoAcesso { get; set; }
