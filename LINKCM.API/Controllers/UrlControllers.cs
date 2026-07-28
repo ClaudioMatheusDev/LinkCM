@@ -3,119 +3,6 @@ using LinkCM.DTOs;
 using LinkCM.Models;
 using LinkCM.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-
-namespace LinkCM.Controllers
-{
-    [ApiController]
-    [Route("api/urls")]
-    public class UrlControllers : ControllerBase
-    {
-        private readonly AppDbContext _context;
-        private readonly GeradorCodigosCurtos _codeGenerator;
-
-        public UrlControllers(AppDbContext context, GeradorCodigosCurtos codeGenerator)
-        {
-            _context = context;
-            _codeGenerator = codeGenerator;
-        }
-
-        [HttpPost]
-        public async Task<ActionResult<RespostaURLCurta>> Create(URLCurtaRequisicao request)
-        {
-            if (!Uri.TryCreate(request.Url, UriKind.Absolute, out var uri) ||
-                (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
-            {
-                return BadRequest("Informe uma URL valida com http ou https.");
-            }
-
-            var shortCode = request.CustomCode?.Trim();
-
-            if (!string.IsNullOrWhiteSpace(shortCode))
-            {
-                if (!GeradorCodigosCurtos.CodigoPersonalizadoValido(shortCode))
-                {
-                    return BadRequest("O codigo curto personalizado deve ter exatamente 6 caracteres alfanumericos.");
-                }
-
-                var customCodeExists = await _context.ShortUrls
-                    .AnyAsync(url => url.ShortCode == shortCode);
-
-                if (customCodeExists)
-                {
-                    return Conflict("Esse codigo curto ja esta em uso.");
-                }
-            }
-            else
-            {
-                do
-                {
-                    shortCode = _codeGenerator.GerarCodigoCurto();
-                }
-                while (await _context.ShortUrls.AnyAsync(url => url.ShortCode == shortCode));
-            }
-
-            var baseUrl = $"{Request.Scheme}://{Request.Host}";
-
-            if (request.DataExpira.HasValue && request.DataExpira.Value <= DateTime.UtcNow)
-            {
-                return BadRequest("A data de expiração deve ser uma data futura.");
-            }
-
-            DateTime dataExpiraFinal = request.DataExpira ?? DateTime.UtcNow.AddYears(1);
-
-            var urlCurta = new URLCurta
-            {
-                UrlOriginal = request.Url,
-                ShortCode = shortCode!,
-                UrlOtimizada = $"{baseUrl}/{shortCode}",
-                DataCriacao = DateTime.UtcNow,
-                DataExpira = dataExpiraFinal,
-                QuantidadeCliques = 0,
-                Ativo = true
-            };
-
-            _context.ShortUrls.Add(urlCurta);
-            await _context.SaveChangesAsync();
-
-            var response = new RespostaURLCurta
-            {
-                Id = urlCurta.Id,
-                UrlCurta = urlCurta.UrlOtimizada,
-                UrlOriginal = urlCurta.UrlOriginal,
-                ShortCode = urlCurta.ShortCode,
-                DataCriacao = urlCurta.DataCriacao,
-                DataExpira = urlCurta.DataExpira,
-                ContasAcessadas = urlCurta.QuantidadeCliques
-            };
-
-            return CreatedAtAction(nameof(Create), new { id = urlCurta.Id }, response);
-        }
-
-        [HttpGet("/{shortCode}")]
-        public async Task<ActionResult<RespostaURLCurta>> RedirectToOriginal(string shortCode)
-        {
-            var urlCurta = await _context.ShortUrls.FirstOrDefaultAsync(url => url.ShortCode == shortCode);
-
-            if (urlCurta is null || !urlCurta.Ativo || urlCurta.DataExpira <= DateTime.UtcNow)
-            {
-                return NotFound("URL curta não encontrada ou expirada.");
-            }
-
-            urlCurta.QuantidadeCliques++;
-            urlCurta.UltimoAcesso = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-
-            return Redirect(urlCurta.UrlOriginal);
-        }
-    }
-}
-using LinkCM.Data;
-using LinkCM.DTOs;
-using LinkCM.Models;
-using LinkCM.Services;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
@@ -146,6 +33,8 @@ namespace LinkCM.Controllers
             URLCurtaRequisicao request,
             CancellationToken cancellationToken)
         {
+            var DataHoraAgora = DateTime.UtcNow.AddHours(-3);
+
             if (!UrlValida(request.Url))
             {
                 return BadRequest(
@@ -153,7 +42,7 @@ namespace LinkCM.Controllers
             }
 
             if (request.DataExpira.HasValue &&
-                request.DataExpira.Value <= DateTime.UtcNow)
+                request.DataExpira.Value <= DataHoraAgora)
             {
                 return BadRequest(
                     "A data de expiração deve ser uma data futura.");
@@ -187,6 +76,8 @@ namespace LinkCM.Controllers
                     "6 caracteres alfanuméricos.");
             }
 
+            // Pré-checagem para retornar 409 mais cedo.
+            // Não é a garantia definitiva contra concorrência.
             var customCodeExists = await _context.ShortUrls
                 .AnyAsync(
                     url => url.ShortCode == customCode,
@@ -267,16 +158,17 @@ namespace LinkCM.Controllers
             string shortCode)
         {
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var DataHoraAgora = DateTime.UtcNow.AddHours(-3);
 
             var dataExpiraFinal =
-                request.DataExpira ?? DateTime.UtcNow.AddYears(1);
+                request.DataExpira ?? DataHoraAgora.AddYears(1);
 
             return new URLCurta
             {
                 UrlOriginal = request.Url,
                 ShortCode = shortCode,
                 UrlOtimizada = $"{baseUrl}/{shortCode}",
-                DataCriacao = DateTime.UtcNow,
+                DataCriacao = DataHoraAgora,
                 DataExpira = dataExpiraFinal,
                 QuantidadeCliques = 0,
                 Ativo = true
@@ -320,6 +212,7 @@ namespace LinkCM.Controllers
             {
                 return false;
             }
+
             var ehDuplicidade =
                 sqlException.Number is 2601 or 2627;
 
@@ -337,7 +230,8 @@ namespace LinkCM.Controllers
         public async Task<ActionResult> RedirectToOriginal(
             string shortCode,
             CancellationToken cancellationToken)
-        {
+        {   
+            var DataHoraAgora = DateTime.UtcNow.AddHours(-3);
             var urlCurta = await _context.ShortUrls
                 .FirstOrDefaultAsync(
                     url => url.ShortCode == shortCode,
@@ -345,14 +239,14 @@ namespace LinkCM.Controllers
 
             if (urlCurta is null ||
                 !urlCurta.Ativo ||
-                urlCurta.DataExpira <= DateTime.UtcNow)
+                urlCurta.DataExpira <= DataHoraAgora)
             {
                 return NotFound(
                     "URL curta não encontrada ou expirada.");
             }
 
             urlCurta.QuantidadeCliques++;
-            urlCurta.UltimoAcesso = DateTime.UtcNow;
+            urlCurta.UltimoAcesso = DataHoraAgora;
 
             await _context.SaveChangesAsync(cancellationToken);
 
